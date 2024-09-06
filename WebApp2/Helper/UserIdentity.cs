@@ -23,7 +23,7 @@ namespace WebApp2.Helper
         public CustomIdentity(ClaimsIdentity claimsIdentity)
         {
             isAuthenticated = claimsIdentity.IsAuthenticated;
-            Claim claim = claimsIdentity?.FindFirst("WebApp2UserIdentity");
+            Claim claim = claimsIdentity?.FindFirst("App1UserIdentity");
             userIdentity = JsonConvert.DeserializeObject<UserIdentity>(claim.Value);
         }
 

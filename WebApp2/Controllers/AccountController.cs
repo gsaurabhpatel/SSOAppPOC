@@ -11,7 +11,6 @@ using System;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using WebApp2.Helper;
 
 namespace WebApp2.Controllers
 {
@@ -71,21 +70,19 @@ namespace WebApp2.Controllers
                 if (User.Identity.IsAuthenticated)
                 {
                     await IdentityLogout();
-                    await Task.Delay(5000);
+                    //await Task.Delay(5000);
                 }
-                var sSOUserData = _token.ReadTokenizedData(token);
-                if (sSOUserData != null && !string.IsNullOrEmpty(sSOUserData.UserName))
+                var tokenData = _token.ReadTokenizedData(token);
+                if (tokenData != null && !string.IsNullOrEmpty(tokenData.UserName))
                 {
-                    var user = _accountService.FindUserByUserName(sSOUserData.UserName);
+                    var user = _accountService.FindUserByUserName(tokenData.UserName);
                     if (user != null && user.UserId != null && user.UserId > 0)
                     {
                         await IdentityLogin(user, false);
-                        return RedirectToAction("Index", "Home");
                     }
                     else
                     {
-                        error = $"Authorization failed for user {user.UserName}. {Environment.NewLine} Please connect to your service provider.";
-                        return RedirectToAction("Login", "Account", new { sso_error = error, token = token });
+                        error = $"Authorization failed for user {tokenData.UserName}. Please connect to your service provider.";
                     }
                 }
             }
@@ -94,7 +91,15 @@ namespace WebApp2.Controllers
                 error = $"Something went wrong, please try after some time. {Environment.NewLine} Exception: {ex.Message}";
                 _logger.LogError(ex.Message);
             }
-            return RedirectToAction("Login", "Account", new { sso_error = error, token = token });
+
+            if (string.IsNullOrEmpty(error))
+            {
+                return RedirectToAction("Index", "Home");
+            }
+            else
+            {
+                return RedirectToAction("Login", "Account", new { sso_error = error, token = token });
+            }
         }
 
         public async Task<IActionResult> Logout()
@@ -111,7 +116,7 @@ namespace WebApp2.Controllers
                 new Claim(ClaimTypes.GivenName, $"{user.FirstName} {user.LastName}"),
                 new Claim(ClaimTypes.Name, user.UserName)
             };
-            claims.Add(new Claim("WebApp2UserIdentity", JsonConvert.SerializeObject(user)));
+            claims.Add(new Claim("App2UserIdentity", JsonConvert.SerializeObject(user)));
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
@@ -129,13 +134,7 @@ namespace WebApp2.Controllers
 
         private async Task IdentityLogout()
         {
-            var authProperties = new AuthenticationProperties
-            {
-                AllowRefresh = true,
-                ExpiresUtc = DateTime.Now.AddDays(-1)
-            };
-
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme, authProperties);
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         }
 
         private IActionResult RedirectToLocal(string returnUrl)

@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using SSO;
 using SSO.DataModels;
 using SSO.Services;
 using SSO.ViewModels;
@@ -12,7 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Security.Claims;
-using WebApp1.Helper;
+using System.Threading.Tasks;
 
 namespace WebApp1.Controllers
 {
@@ -45,14 +44,14 @@ namespace WebApp1.Controllers
         }
 
         [HttpPost]
-        public IActionResult Login(LoginViewModel loginViewModel, string returnUrl)
+        public async Task<IActionResult> Login(LoginViewModel loginViewModel, string returnUrl)
         {
             if (ModelState.IsValid)
             {
                 var user = _accountService.UserLogin(loginViewModel);
                 if (user != null && user.UserId != null && user.UserId > 0)
                 {
-                    IdentityLogin(user, loginViewModel.IsRememberMe);
+                    await IdentityLogin(user, loginViewModel.IsRememberMe);
                     return RedirectToLocal(returnUrl);
                 }
                 else
@@ -72,27 +71,28 @@ namespace WebApp1.Controllers
             };
 
             var token = _token.GetTokenizedData(user);
-
-            string requestUri = $"{_myAppSettings.WebApp2Url}Account/SSO_Login?token={WebUtility.UrlEncode(token)}";
-
-            Response.Redirect(requestUri);
+            if (!string.IsNullOrEmpty(token))
+            {
+                string requestUri = $"{_myAppSettings.WebApp2Url}Account/SSO_Login?token={WebUtility.UrlEncode(token)}";
+                Response.Redirect(requestUri);
+            }
         }
 
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
-            IdentityLogout();
+            await IdentityLogout();
             return RedirectToAction("Login", "Account");
         }
 
-        private async void IdentityLogin(UserDataModel userDataModel, bool isPersistent)
+        private async Task IdentityLogin(UserDataModel user, bool isPersistent)
         {
             var claims = new List<Claim>
             {
-                new Claim("UserId", Convert.ToString(userDataModel.UserId)),
-                new Claim(ClaimTypes.GivenName, $"{userDataModel.FirstName} {userDataModel.LastName}"),
-                new Claim(ClaimTypes.Name, userDataModel.UserName)
+                new Claim("UserId", Convert.ToString(user.UserId)),
+                new Claim(ClaimTypes.GivenName, $"{user.FirstName} {user.LastName}"),
+                new Claim(ClaimTypes.Name, user.UserName)
             };
-            claims.Add(new Claim("WebApp1UserIdentity", JsonConvert.SerializeObject(userDataModel)));
+            claims.Add(new Claim("App1UserIdentity", JsonConvert.SerializeObject(user)));
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
@@ -108,14 +108,8 @@ namespace WebApp1.Controllers
                 new ClaimsPrincipal(claimsIdentity), authProperties);
         }
 
-        private async void IdentityLogout()
+        private async Task IdentityLogout()
         {
-            var authProperties = new AuthenticationProperties
-            {
-                AllowRefresh = true,
-                ExpiresUtc = DateTime.Now.AddDays(-1)
-            };
-
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         }
 
