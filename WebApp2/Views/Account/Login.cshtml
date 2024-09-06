@@ -1,0 +1,36 @@
+﻿@model LoginViewModel
+@{
+    ViewData["Title"] = "Login";
+}
+<div class="row">
+    <div class="col-lg-12 col-sm-12">
+        <h5>Log in</h5>
+        <hr />
+    </div>
+    <div class="col-lg-4 col-sm-12">
+        <form method="post" asp-controller="Account" asp-action="LogIn" asp-route-returnurl="@Context.Request.Query["ReturnUrl"]">
+            @Html.AntiForgeryToken()
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="txtUsername" asp-for="Username" class="form-control" placeholder="Username" maxlength="128" />
+                <span asp-validation-for="Username" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="txtPassword" asp-for="Password" class="form-control" placeholder="Password" maxlength="128" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label class="checkbox-control">
+                    <input type="checkbox" id="chkIsRememberMe" asp-for="IsRememberMe" /> Remember Me?
+                </label>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-outline-primary">Login</button>
+            </div>
+            <div class="form-group">
+                <label class="text-danger">@Context.Request.Query["sso_error"]</label>
+            </div>
+        </form>
+    </div>
+</div>
