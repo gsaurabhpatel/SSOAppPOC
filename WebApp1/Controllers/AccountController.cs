@@ -35,9 +35,13 @@ namespace WebApp1.Controllers
         public IActionResult Login()
         {
             if (User.Identity.IsAuthenticated)
+            {
                 return RedirectToAction("Index", "Home");
+            }
             else
+            {
                 return View(new LoginViewModel());
+            }
         }
 
         [HttpPost]
@@ -45,19 +49,18 @@ namespace WebApp1.Controllers
         {
             if (ModelState.IsValid)
             {
-                var result = _accountService.UserLogin(loginViewModel);
-                if (result != null && result.UserId != null && result.UserId > 0)
+                var user = _accountService.UserLogin(loginViewModel);
+                if (user != null && user.UserId != null && user.UserId > 0)
                 {
-                    IdentityLogIn(result, loginViewModel.IsRememberMe);
+                    IdentityLogin(user, loginViewModel.IsRememberMe);
                     return RedirectToLocal(returnUrl);
                 }
                 else
                 {
-                    ModelState.AddModelError(string.Empty, result.Message);
-                    loginViewModel.Message = result.Message;
+                    ModelState.AddModelError(string.Empty, user.Message);
+                    loginViewModel.Message = user.Message;
                 }
             }
-            loginViewModel.IsPostBack = true;
             return View(loginViewModel);
         }
 
@@ -77,20 +80,19 @@ namespace WebApp1.Controllers
 
         public IActionResult Logout()
         {
-            IdentityLogOut();
+            IdentityLogout();
             return RedirectToAction("Login", "Account");
         }
 
-        private async void IdentityLogIn(UserDataModel userDataModel, bool isPersistent)
+        private async void IdentityLogin(UserDataModel userDataModel, bool isPersistent)
         {
             var claims = new List<Claim>
             {
                 new Claim("UserId", Convert.ToString(userDataModel.UserId)),
                 new Claim(ClaimTypes.GivenName, $"{userDataModel.FirstName} {userDataModel.LastName}"),
-                new Claim(ClaimTypes.Name, userDataModel.UserName),
-                new Claim("Password", Convert.ToString(userDataModel.Password))
+                new Claim(ClaimTypes.Name, userDataModel.UserName)
             };
-            claims.Add(new Claim("UserIdentity", JsonConvert.SerializeObject(userDataModel)));
+            claims.Add(new Claim("WebApp1UserIdentity", JsonConvert.SerializeObject(userDataModel)));
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
@@ -106,8 +108,14 @@ namespace WebApp1.Controllers
                 new ClaimsPrincipal(claimsIdentity), authProperties);
         }
 
-        private async void IdentityLogOut()
+        private async void IdentityLogout()
         {
+            var authProperties = new AuthenticationProperties
+            {
+                AllowRefresh = true,
+                ExpiresUtc = DateTime.Now.AddDays(-1)
+            };
+
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         }
 

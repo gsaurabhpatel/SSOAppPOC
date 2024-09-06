@@ -6,10 +6,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using System;
 using SSO.DataModels;
 using SSO.Services;
 using SSOIdentity;
+using System;
 
 namespace WebApp1
 {
@@ -31,7 +31,7 @@ namespace WebApp1
                 {
                     HttpOnly = true,
                     Name = ".webapp1.login.auttoken",
-                    SameSite = SameSiteMode.Strict,
+                    SameSite = SameSiteMode.None,
                     SecurePolicy = CookieSecurePolicy.SameAsRequest
                 };
 
@@ -74,7 +74,7 @@ namespace WebApp1
 
             var cookiePolicyOptions = new CookiePolicyOptions
             {
-                MinimumSameSitePolicy = SameSiteMode.Strict,
+                MinimumSameSitePolicy = SameSiteMode.None,
             };
             app.UseCookiePolicy(cookiePolicyOptions);
 
@@ -82,7 +82,7 @@ namespace WebApp1
             {
                 endpoints.MapControllerRoute(
                     name: "default",
-                    pattern: "{controller=Account}/{action=Login}/{id?}");
+                    pattern: "{controller=Home}/{action=Index}/{id?}");
             });
         }
     }

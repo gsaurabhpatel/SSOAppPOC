@@ -31,7 +31,7 @@ namespace WebApp2
                 {
                     HttpOnly = true,
                     Name = ".webapp2.login.auttoken",
-                    SameSite = SameSiteMode.Strict,
+                    SameSite = SameSiteMode.None,
                     SecurePolicy = CookieSecurePolicy.SameAsRequest
                 };
 
@@ -74,7 +74,7 @@ namespace WebApp2
 
             var cookiePolicyOptions = new CookiePolicyOptions
             {
-                MinimumSameSitePolicy = SameSiteMode.Strict,
+                MinimumSameSitePolicy = SameSiteMode.None,
             };
             app.UseCookiePolicy(cookiePolicyOptions);
 
@@ -82,7 +82,7 @@ namespace WebApp2
             {
                 endpoints.MapControllerRoute(
                     name: "default",
-                    pattern: "{controller=Account}/{action=Login}/{id?}");
+                    pattern: "{controller=Home}/{action=Index}/{id?}");
             });
         }
     }

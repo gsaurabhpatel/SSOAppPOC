@@ -51,7 +51,7 @@ namespace WebApp2.Controllers
                 var user = _accountService.UserLogin(loginViewModel);
                 if (user != null && user.UserId != null && user.UserId > 0)
                 {
-                    await IdentityLogIn(user, loginViewModel.IsRememberMe);
+                    await IdentityLogin(user, loginViewModel.IsRememberMe);
                     return RedirectToLocal(returnUrl);
                 }
                 else
@@ -60,7 +60,6 @@ namespace WebApp2.Controllers
                     loginViewModel.Message = user.Message;
                 }
             }
-            loginViewModel.IsPostBack = true;
             return View(loginViewModel);
         }
 
@@ -71,16 +70,16 @@ namespace WebApp2.Controllers
             {
                 if (User.Identity.IsAuthenticated)
                 {
-                    await IdentityLogOut();
+                    await IdentityLogout();
+                    await Task.Delay(5000);
                 }
-
                 var sSOUserData = _token.ReadTokenizedData(token);
                 if (sSOUserData != null && !string.IsNullOrEmpty(sSOUserData.UserName))
                 {
                     var user = _accountService.FindUserByUserName(sSOUserData.UserName);
                     if (user != null && user.UserId != null && user.UserId > 0)
                     {
-                        await IdentityLogIn(user, false);
+                        await IdentityLogin(user, false);
                         return RedirectToAction("Index", "Home");
                     }
                     else
@@ -100,11 +99,11 @@ namespace WebApp2.Controllers
 
         public async Task<IActionResult> Logout()
         {
-            await IdentityLogOut();
+            await IdentityLogout();
             return RedirectToAction("Login", "Account");
         }
 
-        private async Task IdentityLogIn(UserDataModel user, bool isPersistent)
+        private async Task IdentityLogin(UserDataModel user, bool isPersistent)
         {
             var claims = new List<Claim>
             {
@@ -128,7 +127,7 @@ namespace WebApp2.Controllers
                 new ClaimsPrincipal(claimsIdentity), authProperties);
         }
 
-        private async Task IdentityLogOut()
+        private async Task IdentityLogout()
         {
             var authProperties = new AuthenticationProperties
             {
