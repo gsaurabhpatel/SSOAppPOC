@@ -70,7 +70,6 @@ namespace WebApp2.Controllers
                 if (User.Identity.IsAuthenticated)
                 {
                     await IdentityLogout();
-                    //await Task.Delay(5000);
                 }
                 var tokenData = _token.ReadTokenizedData(token);
                 if (tokenData != null && !string.IsNullOrEmpty(tokenData.UserName))
